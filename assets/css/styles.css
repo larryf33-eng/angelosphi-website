@@ -146,20 +146,113 @@ li { margin-bottom: .4em; }
 .brand img { height: 54px; width: auto; }
 .brand__text { display: none; }
 
-.nav { display: flex; align-items: center; gap: 4px; }
-.nav a {
+.nav { display: flex; align-items: center; gap: 2px; }
+
+/* top-level items ------------------------------------------------------- */
+.nav__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 10px 11px;
   font-weight: 600;
   font-size: .92rem;
   color: var(--ink);
   border-radius: 6px;
+  white-space: nowrap;
 }
-.nav a:hover { color: var(--red); background: var(--surface); }
-.nav a.is-active { color: var(--red); }
-.nav > a { white-space: nowrap; }
+.nav__link:hover { color: var(--red); background: var(--surface); }
+.nav__link.is-active { color: var(--red); }
 /* the nav carries its own CTA for the mobile drawer; the header bar already
    shows one on desktop, so hide the duplicate above the breakpoint */
 .nav > .btn { display: none; }
+
+/* dropdown -------------------------------------------------------------- */
+.nav__item { position: relative; display: flex; align-items: center; }
+
+.dd-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  padding: 10px 6px 10px 0;
+  margin-left: -8px;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 6px;
+}
+.dd-toggle svg { width: 13px; height: 13px; transition: transform .2s ease; }
+.dd-toggle:hover { color: var(--red); }
+.nav__item:hover .dd-toggle svg,
+.nav__item:focus-within .dd-toggle svg { transform: rotate(180deg); }
+.nav__item:hover .nav__link,
+.nav__item:focus-within .nav__link { color: var(--red); }
+
+.dd {
+  position: absolute;
+  top: 100%;
+  left: -10px;
+  z-index: 70;
+  min-width: 260px;
+  padding-top: 12px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition: opacity .18s ease, transform .18s ease, visibility .18s;
+}
+.nav__item:hover > .dd,
+.nav__item:focus-within > .dd { opacity: 1; visibility: visible; transform: translateY(0); }
+
+.dd__inner {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 14px;
+  display: grid;
+  gap: 20px;
+}
+.dd--wide .dd__inner { grid-template-columns: repeat(3, minmax(140px, 1fr)); min-width: 540px; }
+.dd--wide { min-width: 570px; left: auto; right: -10px; }
+
+/* the "see everything" link spans the full panel width */
+.dd__foot { grid-column: 1 / -1; }
+
+.dd__col h5 {
+  margin: 0 0 8px;
+  padding: 0 10px;
+  font-family: var(--font-body);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* keeps the 2nd towns column aligned with the 1st without repeating its label */
+.dd__spacer { visibility: hidden; }
+.dd__list { list-style: none; margin: 0; padding: 0; }
+.dd__list li { margin: 0; }
+.dd__list a {
+  display: block;
+  padding: 9px 10px;
+  border-radius: 6px;
+  font-size: .93rem;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.dd__list a:hover { background: var(--surface); color: var(--red); }
+.dd__all {
+  display: block;
+  padding: 12px 10px 4px;
+  border-top: 1px solid var(--line);
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+.dd__all:hover { color: var(--red-600); }
 
 .header-cta { display: flex; align-items: center; gap: 14px; }
 .header-phone { display: flex; flex-direction: column; line-height: 1.2; }
@@ -466,6 +559,16 @@ li { margin-bottom: .4em; }
 /* ------------------------------------------------------------ call bar -- */
 .callbar { display: none; }
 
+/* anchor targets must clear the sticky header when jumped to from the nav
+   dropdowns (services.html#interior, areas.html#ossining, ...) */
+section[id], .area-cols li[id], #counties { scroll-margin-top: 108px; }
+@media (max-width: 900px) { section[id], .area-cols li[id], #counties { scroll-margin-top: 92px; } }
+
+/* a town jumped to from the Areas dropdown gets a brief highlight so it is
+   obvious which of the 59 rows was targeted */
+.area-cols li[id]:target { background: #fff4d6; border-radius: 6px; }
+.area-cols li[id]:target::before { background: var(--navy); }
+
 /* ---------------------------------------------------------- responsive -- */
 @media (max-width: 1024px) {
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
@@ -484,8 +587,8 @@ li { margin-bottom: .4em; }
   .nav-toggle { display: block; order: 3; }
   .header-cta .btn { display: none; }
   .nav {
-    position: fixed;
-    top: calc(var(--header-h)); left: 0; right: 0;
+    position: absolute;
+    top: 100%; left: 0; right: 0;
     background: #fff;
     flex-direction: column;
     align-items: stretch;
@@ -497,9 +600,60 @@ li { margin-bottom: .4em; }
     transition: max-height .3s ease, padding .3s ease;
     padding-top: 0; padding-bottom: 0;
   }
-  .nav.is-open { max-height: 460px; padding-top: 12px; padding-bottom: 24px; }
-  .nav a { padding: 13px 8px; border-bottom: 1px solid var(--line); border-radius: 0; }
-  .nav > .btn { display: inline-flex; margin-top: 14px; justify-content: center; border-bottom: 0; }
+  .nav.is-open {
+    max-height: calc(100vh - var(--header-h) - 40px);
+    overflow-y: auto;
+    padding-top: 12px;
+    padding-bottom: 24px;
+  }
+  .nav__link { padding: 14px 8px; border-radius: 0; flex: 1; }
+  .nav > .nav__link { border-bottom: 1px solid var(--line); }
+  .nav > .btn { display: inline-flex; margin-top: 14px; justify-content: center; }
+
+  /* dropdowns become tap-to-expand accordions inside the drawer */
+  .nav__item { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+  .dd-toggle {
+    margin-left: 0;
+    padding: 14px 10px;
+    color: var(--navy);
+  }
+  .dd-toggle svg { width: 17px; height: 17px; }
+  .nav__item:hover .dd-toggle svg,
+  .nav__item:focus-within .dd-toggle svg { transform: none; }
+  .nav__item.is-open .dd-toggle svg { transform: rotate(180deg); }
+  .nav__item:hover .nav__link,
+  .nav__item:focus-within .nav__link { color: var(--ink); }
+
+  .dd {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    left: auto;
+    padding-top: 0;
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+    display: none;
+  }
+  .dd--wide { min-width: 0; left: auto; }
+  .nav__item:hover > .dd, .nav__item:focus-within > .dd { display: none; }
+  .nav__item.is-open > .dd { display: block; }
+  .dd__inner {
+    border: 0;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 4px 0 12px 12px;
+    background: var(--surface);
+    grid-template-columns: 1fr;
+    gap: 12px;
+    min-width: 0;
+  }
+  .dd--wide .dd__inner { grid-template-columns: 1fr; min-width: 0; }
+  .dd--wide { right: auto; }
+  .dd__spacer { display: none; }
+  .dd__foot { padding-left: 0; }
+  .dd__list a { white-space: normal; padding: 10px; }
+
   .header-phone { display: none; }
   .brand img { height: 46px; }
 }
@@ -511,7 +665,10 @@ li { margin-bottom: .4em; }
   .field-row { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; padding: 48px 0 36px; }
   .cta-band__inner { flex-direction: column; align-items: flex-start; }
+  .topbar .wrap { flex-wrap: nowrap; justify-content: center; }
   .topbar__items { gap: 14px; font-size: .78rem; }
+  .topbar__items:first-child .topbar__item:first-child { display: none; }
+  .topbar__items a:last-child { display: none; }
   .ba__pair { grid-template-columns: 1fr 1fr; }
   .area-cols { columns: 2 140px; }
   .form-card { padding: 24px; }

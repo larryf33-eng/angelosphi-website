@@ -6,7 +6,18 @@ header/footer shell so the chrome stays identical across pages.
 Run:  python3 build.py
 Edits to the header, footer, top bar or mobile call bar should be made HERE
 and rebuilt, otherwise the pages will drift apart.
-index.html is maintained by hand and is not touched by this script.
+
+index.html's BODY is hand-maintained, but its header is not: the file carries
+<!-- HEADER:START --> / <!-- HEADER:END --> markers and this script rewrites
+whatever sits between them, so the nav (including the Services and Areas
+dropdowns) can never drift from the inner pages.
+
+Nav dropdown contents are data-driven:
+  SERVICES        -> the Services dropdown
+  FEATURED_TOWNS  -> the "Popular towns" columns in the Areas dropdown
+  COUNTIES        -> the "Counties" column in the Areas dropdown
+Add a town to FEATURED_TOWNS and it appears in the menu; its link resolves
+because every town on areas.html gets an id from town_slug().
 """
 
 import io, os, re, sys
@@ -30,6 +41,71 @@ IMG = {
 }
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+# ----------------------------------------------------------------- data ----
+
+SERVICES = [
+    ("interior", "Interior Painting", IMG["paint"],
+     "Walls, ceilings, trim and doors brought back to life. We move and cover furniture, mask edges, patch and sand before a single drop of paint goes on, and we clean up completely at the end of every day.",
+     ["Walls, ceilings, trim, doors and closets",
+      "Patching, sanding and priming included",
+      "Furniture moved and floors fully protected",
+      "Color and sheen guidance if you want it",
+      "Occupied homes worked around your schedule"]),
+    ("exterior", "Exterior Painting", IMG["p2"],
+     "Siding, trim, porches, railings and detail work. Hudson Valley weather is hard on a house — proper washing, scraping and priming is what separates a finish that lasts from one that peels in two winters.",
+     ["Washing, scraping and spot-priming before paint",
+      "Siding, trim, soffits, fascia, shutters and doors",
+      "Porches, columns and railings",
+      "Caulking and minor surface repairs",
+      "Landscaping and walkways covered and protected"]),
+    ("bathroom", "Shower &amp; Bathroom Remodeling", IMG["bath"],
+     "A full bathroom refresh handled end to end — demolition, tile, fixtures, vanities and finish work — so you deal with one contractor instead of five.",
+     ["Full and partial bathroom remodels",
+      "Shower and tub surrounds rebuilt",
+      "Tile floors and walls",
+      "Vanities, mirrors, lighting and fixtures",
+      "Waterproofing and prep done properly"]),
+    ("drywall", "Drywall Installation &amp; Repair", IMG["drywall"],
+     "New walls, ceiling repairs, water damage, cracks, nail pops and holes. Taped, coated and sanded smooth so the paint that follows looks like the wall was always that way.",
+     ["New drywall hung and finished",
+      "Water damage and ceiling repairs",
+      "Crack, hole and nail-pop patching",
+      "Taping, coating and skim coating",
+      "Texture matching on existing walls"]),
+    ("flooring", "Laminate Floor Installation", IMG["p3"],
+     "Durable, great-looking laminate flooring installed with tight seams, level subfloor prep, clean transitions and proper trim and moulding.",
+     ["Subfloor checked and prepped",
+      "Laminate and click-lock plank installation",
+      "Transitions, thresholds and reducers",
+      "Baseboard, quarter-round and shoe moulding",
+      "Old flooring removed and hauled out"]),
+    ("deck", "Deck &amp; Fence Staining", IMG["p4"],
+     "Cleaning, prep and staining that protects outdoor wood from sun, rain and snow — and brings a grey, weathered deck back to something you want to sit on.",
+     ["Deck, railing, fence and outdoor wood",
+      "Cleaning and stripping of old finish",
+      "Sanding and board repairs",
+      "Semi-transparent, solid and clear finishes",
+      "Sealing to resist moisture and UV"]),
+    ("handyman", "Additional Handyman Services", IMG["p5"],
+     "The smaller jobs that come with any project — and the ones that have been on the list for a year. If it's connected to painting or remodeling, ask us.",
+     ["Trim, moulding and carpentry repairs",
+      "Doors, hardware and fixture swaps",
+      "Power washing and surface prep",
+      "Punch-list and touch-up work",
+      "Commercial property maintenance"]),
+]
+
+TOWNS = """Amawalk, Ardsley, Ardsley on Hudson, Armonk, Bedford, Bedford Hills, Briarcliff Manor,
+Bronxville, Buchanan, Chappaqua, Cortlandt Manor, Cross River, Croton Falls, Croton on Hudson,
+Dobbs Ferry, Eastchester, Elmsford, Goldens Bridge, Granite Springs, Harrison, Hartsdale,
+Hastings on Hudson, Hawthorne, Irvington, Jefferson Valley, Katonah, Larchmont, Mamaroneck,
+Millwood, Mohegan Lake, Montrose, Mount Kisco, Mount Vernon, New Rochelle, North Salem, Ossining,
+Peekskill, Pelham, Pleasantville, Port Chester, Pound Ridge, Purchase, Purdys, Rye, Rye Brook,
+Scarsdale, Shrub Oak, Sleepy Hollow, Somers, South Salem, Tarrytown, Thornwood, Tuckahoe, Valhalla,
+Waccabuc, West Harrison, White Plains, Yonkers, Yorktown Heights"""
+TOWN_LIST = [t.strip() for t in TOWNS.replace("\n", " ").split(",") if t.strip()]
+
 
 # ---------------------------------------------------------------- shell ----
 
@@ -76,18 +152,102 @@ TOPBAR = f"""<div class="topbar">
 </div>
 """
 
+ICON_CARET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>'
+
+
+def town_slug(name):
+    """Town name -> anchor id used on areas.html."""
+    return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+
+
+# Towns promoted into the Areas dropdown. Everything else stays on areas.html.
+FEATURED_TOWNS = [
+    "Ossining", "White Plains", "Yonkers", "Scarsdale", "Tarrytown",
+    "Chappaqua", "Briarcliff Manor", "Croton on Hudson", "Peekskill",
+    "Mount Kisco",
+]
+
+COUNTIES = ["Westchester County", "Rockland County", "Orange County", "Putnam County"]
+
+
+def _services_dd():
+    items = "\n            ".join(
+        f'<li><a href="services.html#{s}">{n}</a></li>'
+        for s, n, _i, _b, _bl in SERVICES)
+    return f"""<div class="dd">
+          <div class="dd__inner">
+            <div class="dd__col">
+              <h5>What we do</h5>
+              <ul class="dd__list">
+            {items}
+              </ul>
+            </div>
+            <div class="dd__foot">
+              <a class="dd__all" href="services.html">All services &rarr;</a>
+            </div>
+          </div>
+        </div>"""
+
+
+def _areas_dd():
+    """Three balanced columns: counties, then the featured towns split in half."""
+    counties = "\n            ".join(
+        f'<li><a href="areas.html#counties">{c}</a></li>' for c in COUNTIES)
+    half = (len(FEATURED_TOWNS) + 1) // 2
+    col_a, col_b = FEATURED_TOWNS[:half], FEATURED_TOWNS[half:]
+    fmt = lambda ts: "\n            ".join(
+        f'<li><a href="areas.html#{town_slug(t)}">{t}, NY</a></li>' for t in ts)
+    return f"""<div class="dd dd--wide">
+          <div class="dd__inner">
+            <div class="dd__col">
+              <h5>Counties</h5>
+              <ul class="dd__list">
+            {counties}
+              </ul>
+            </div>
+            <div class="dd__col">
+              <h5>Popular towns</h5>
+              <ul class="dd__list">
+            {fmt(col_a)}
+              </ul>
+            </div>
+            <div class="dd__col">
+              <h5 class="dd__spacer">&nbsp;</h5>
+              <ul class="dd__list">
+            {fmt(col_b)}
+              </ul>
+            </div>
+            <div class="dd__foot">
+              <a class="dd__all" href="areas.html">All service areas &rarr;</a>
+            </div>
+          </div>
+        </div>"""
+
+
 HEADER = f"""<header class="site-header">
   <div class="wrap">
     <a class="brand" href="index.html">
       <img src="{IMG['logo']}" alt="Angelos C. Painting Inc. Home Improvement">
     </a>
     <nav class="nav" id="primary-nav" aria-label="Primary">
-      <a href="index.html">Home</a>
-      <a href="about.html">About</a>
-      <a href="services.html">Services</a>
-      <a href="gallery.html">Portfolio</a>
-      <a href="areas.html">Service Areas</a>
-      <a href="contact.html">Contact</a>
+      <a class="nav__link" href="index.html">Home</a>
+      <a class="nav__link" href="about.html">About</a>
+
+      <div class="nav__item">
+        <a class="nav__link" href="services.html">Services</a>
+        <button class="dd-toggle" type="button" aria-expanded="false" aria-label="Show services menu">{ICON_CARET}</button>
+        {_services_dd()}
+      </div>
+
+      <a class="nav__link" href="gallery.html">Portfolio</a>
+
+      <div class="nav__item">
+        <a class="nav__link" href="areas.html">Areas</a>
+        <button class="dd-toggle" type="button" aria-expanded="false" aria-label="Show service areas menu">{ICON_CARET}</button>
+        {_areas_dd()}
+      </div>
+
+      <a class="nav__link" href="contact.html">Contact</a>
       <a class="btn btn--primary" href="contact.html">Free Estimate</a>
     </nav>
     <div class="header-cta">
@@ -206,69 +366,6 @@ def page(filename, title, desc, hero, body):
     print("wrote", filename, len(html), "bytes")
 
 
-# ----------------------------------------------------------------- data ----
-
-SERVICES = [
-    ("interior", "Interior Painting", IMG["paint"],
-     "Walls, ceilings, trim and doors brought back to life. We move and cover furniture, mask edges, patch and sand before a single drop of paint goes on, and we clean up completely at the end of every day.",
-     ["Walls, ceilings, trim, doors and closets",
-      "Patching, sanding and priming included",
-      "Furniture moved and floors fully protected",
-      "Color and sheen guidance if you want it",
-      "Occupied homes worked around your schedule"]),
-    ("exterior", "Exterior Painting", IMG["p2"],
-     "Siding, trim, porches, railings and detail work. Hudson Valley weather is hard on a house — proper washing, scraping and priming is what separates a finish that lasts from one that peels in two winters.",
-     ["Washing, scraping and spot-priming before paint",
-      "Siding, trim, soffits, fascia, shutters and doors",
-      "Porches, columns and railings",
-      "Caulking and minor surface repairs",
-      "Landscaping and walkways covered and protected"]),
-    ("bathroom", "Shower &amp; Bathroom Remodeling", IMG["bath"],
-     "A full bathroom refresh handled end to end — demolition, tile, fixtures, vanities and finish work — so you deal with one contractor instead of five.",
-     ["Full and partial bathroom remodels",
-      "Shower and tub surrounds rebuilt",
-      "Tile floors and walls",
-      "Vanities, mirrors, lighting and fixtures",
-      "Waterproofing and prep done properly"]),
-    ("drywall", "Drywall Installation &amp; Repair", IMG["drywall"],
-     "New walls, ceiling repairs, water damage, cracks, nail pops and holes. Taped, coated and sanded smooth so the paint that follows looks like the wall was always that way.",
-     ["New drywall hung and finished",
-      "Water damage and ceiling repairs",
-      "Crack, hole and nail-pop patching",
-      "Taping, coating and skim coating",
-      "Texture matching on existing walls"]),
-    ("flooring", "Laminate Floor Installation", IMG["p3"],
-     "Durable, great-looking laminate flooring installed with tight seams, level subfloor prep, clean transitions and proper trim and moulding.",
-     ["Subfloor checked and prepped",
-      "Laminate and click-lock plank installation",
-      "Transitions, thresholds and reducers",
-      "Baseboard, quarter-round and shoe moulding",
-      "Old flooring removed and hauled out"]),
-    ("deck", "Deck &amp; Fence Staining", IMG["p4"],
-     "Cleaning, prep and staining that protects outdoor wood from sun, rain and snow — and brings a grey, weathered deck back to something you want to sit on.",
-     ["Deck, railing, fence and outdoor wood",
-      "Cleaning and stripping of old finish",
-      "Sanding and board repairs",
-      "Semi-transparent, solid and clear finishes",
-      "Sealing to resist moisture and UV"]),
-    ("handyman", "Additional Handyman Services", IMG["p5"],
-     "The smaller jobs that come with any project — and the ones that have been on the list for a year. If it's connected to painting or remodeling, ask us.",
-     ["Trim, moulding and carpentry repairs",
-      "Doors, hardware and fixture swaps",
-      "Power washing and surface prep",
-      "Punch-list and touch-up work",
-      "Commercial property maintenance"]),
-]
-
-TOWNS = """Amawalk, Ardsley, Ardsley on Hudson, Armonk, Bedford, Bedford Hills, Briarcliff Manor,
-Bronxville, Buchanan, Chappaqua, Cortlandt Manor, Cross River, Croton Falls, Croton on Hudson,
-Dobbs Ferry, Eastchester, Elmsford, Goldens Bridge, Granite Springs, Harrison, Hartsdale,
-Hastings on Hudson, Hawthorne, Irvington, Jefferson Valley, Katonah, Larchmont, Mamaroneck,
-Millwood, Mohegan Lake, Montrose, Mount Kisco, Mount Vernon, New Rochelle, North Salem, Ossining,
-Peekskill, Pelham, Pleasantville, Port Chester, Pound Ridge, Purchase, Purdys, Rye, Rye Brook,
-Scarsdale, Shrub Oak, Sleepy Hollow, Somers, South Salem, Tarrytown, Thornwood, Tuckahoe, Valhalla,
-Waccabuc, West Harrison, White Plains, Yonkers, Yorktown Heights"""
-TOWN_LIST = [t.strip() for t in TOWNS.replace("\n", " ").split(",") if t.strip()]
 
 
 # ---------------------------------------------------------------- about ----
@@ -527,7 +624,7 @@ page("gallery.html",
 
 # ---------------------------------------------------------------- areas ----
 
-town_lis = "\n      ".join(f"<li>{t}</li>" for t in TOWN_LIST)
+town_lis = "\n      ".join(f'<li id="{town_slug(t)}">{t}</li>' for t in TOWN_LIST)
 
 areas_body = f"""
 <section class="section">
@@ -540,7 +637,7 @@ areas_body = f"""
         <h2>Four counties, 60+ towns</h2>
         <p>Angelos C. Painting Inc. serves Rockland, Westchester, Orange and Putnam Counties from our base at 29-A Broad Avenue in Ossining, NY.</p>
         <p>If your town isn't on the list below, call us anyway &mdash; we regularly travel for larger projects.</p>
-        <div class="county-chips">
+        <div class="county-chips" id="counties">
           <span class="chip">Westchester County</span>
           <span class="chip">Rockland County</span>
           <span class="chip">Orange County</span>
@@ -687,3 +784,28 @@ page("contact.html",
      contact_body)
 
 print("\nBuild complete.")
+
+
+# --------------------------------------------------------- index sync ----
+# index.html is hand-written, but its header must not drift from the one the
+# inner pages get. It carries HEADER:START / HEADER:END markers; we rewrite
+# whatever sits between them on every build.
+
+def sync_index():
+    path = os.path.join(HERE, "index.html")
+    if not os.path.exists(path):
+        print("index.html not found - skipping header sync")
+        return
+    src = io.open(path, encoding="utf-8").read()
+    a, b = "<!-- HEADER:START -->", "<!-- HEADER:END -->"
+    if a not in src or b not in src:
+        print("WARNING: index.html has no HEADER markers - header NOT synced")
+        return
+    pre, _, tail = src.partition(a)
+    _, _, post = tail.partition(b)
+    out = pre + a + "\n" + HEADER + b + post
+    io.open(path, "w", encoding="utf-8").write(out)
+    print("synced header into index.html")
+
+
+sync_index()

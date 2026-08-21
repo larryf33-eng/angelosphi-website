@@ -63,18 +63,85 @@
 </div>
 
 <!-- ============================================================= HEADER -->
+<!-- Do not hand-edit between the markers: `python3 build.py` regenerates it. -->
+<!-- HEADER:START -->
 <header class="site-header">
   <div class="wrap">
     <a class="brand" href="index.html">
       <img src="https://assets.cdn.filesafe.space/9COp2d5jFrBGXiysHCUm/media/69dd23744753e162ccd8365d.png" alt="Angelos C. Painting Inc. Home Improvement">
     </a>
     <nav class="nav" id="primary-nav" aria-label="Primary">
-      <a href="index.html">Home</a>
-      <a href="about.html">About</a>
-      <a href="services.html">Services</a>
-      <a href="gallery.html">Portfolio</a>
-      <a href="areas.html">Service Areas</a>
-      <a href="contact.html">Contact</a>
+      <a class="nav__link" href="index.html">Home</a>
+      <a class="nav__link" href="about.html">About</a>
+
+      <div class="nav__item">
+        <a class="nav__link" href="services.html">Services</a>
+        <button class="dd-toggle" type="button" aria-expanded="false" aria-label="Show services menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="dd">
+          <div class="dd__inner">
+            <div class="dd__col">
+              <h5>What we do</h5>
+              <ul class="dd__list">
+            <li><a href="services.html#interior">Interior Painting</a></li>
+            <li><a href="services.html#exterior">Exterior Painting</a></li>
+            <li><a href="services.html#bathroom">Shower &amp; Bathroom Remodeling</a></li>
+            <li><a href="services.html#drywall">Drywall Installation &amp; Repair</a></li>
+            <li><a href="services.html#flooring">Laminate Floor Installation</a></li>
+            <li><a href="services.html#deck">Deck &amp; Fence Staining</a></li>
+            <li><a href="services.html#handyman">Additional Handyman Services</a></li>
+              </ul>
+            </div>
+            <div class="dd__foot">
+              <a class="dd__all" href="services.html">All services &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a class="nav__link" href="gallery.html">Portfolio</a>
+
+      <div class="nav__item">
+        <a class="nav__link" href="areas.html">Areas</a>
+        <button class="dd-toggle" type="button" aria-expanded="false" aria-label="Show service areas menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="dd dd--wide">
+          <div class="dd__inner">
+            <div class="dd__col">
+              <h5>Counties</h5>
+              <ul class="dd__list">
+            <li><a href="areas.html#counties">Westchester County</a></li>
+            <li><a href="areas.html#counties">Rockland County</a></li>
+            <li><a href="areas.html#counties">Orange County</a></li>
+            <li><a href="areas.html#counties">Putnam County</a></li>
+              </ul>
+            </div>
+            <div class="dd__col">
+              <h5>Popular towns</h5>
+              <ul class="dd__list">
+            <li><a href="areas.html#ossining">Ossining, NY</a></li>
+            <li><a href="areas.html#white-plains">White Plains, NY</a></li>
+            <li><a href="areas.html#yonkers">Yonkers, NY</a></li>
+            <li><a href="areas.html#scarsdale">Scarsdale, NY</a></li>
+            <li><a href="areas.html#tarrytown">Tarrytown, NY</a></li>
+              </ul>
+            </div>
+            <div class="dd__col">
+              <h5 class="dd__spacer">&nbsp;</h5>
+              <ul class="dd__list">
+            <li><a href="areas.html#chappaqua">Chappaqua, NY</a></li>
+            <li><a href="areas.html#briarcliff-manor">Briarcliff Manor, NY</a></li>
+            <li><a href="areas.html#croton-on-hudson">Croton on Hudson, NY</a></li>
+            <li><a href="areas.html#peekskill">Peekskill, NY</a></li>
+            <li><a href="areas.html#mount-kisco">Mount Kisco, NY</a></li>
+              </ul>
+            </div>
+            <div class="dd__foot">
+              <a class="dd__all" href="areas.html">All service areas &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a class="nav__link" href="contact.html">Contact</a>
       <a class="btn btn--primary" href="contact.html">Free Estimate</a>
     </nav>
     <div class="header-cta">
@@ -89,6 +156,7 @@
     </div>
   </div>
 </header>
+<!-- HEADER:END -->
 
 <!-- =============================================================== HERO -->
 <section class="hero">
