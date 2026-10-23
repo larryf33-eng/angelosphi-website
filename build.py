@@ -18,6 +18,12 @@ Nav dropdown contents are data-driven:
   COUNTIES        -> the "Counties" column in the Areas dropdown
 Add a town to FEATURED_TOWNS and it appears in the menu; its link resolves
 because every town on areas.html gets an id from town_slug().
+
+Photo galleries are data-driven too: each service has a folder under
+images/ourwork/ and a generated our-work-<folder>.html page that is built by
+SCANNING that folder. To add photos, drop the files into the folder and re-run
+this script. Name files like  interior-painting-13.jpg  (lowercase, hyphens,
+trailing number) because the filename becomes the photo's alt text.
 """
 
 import io, os, re, sys
@@ -42,52 +48,57 @@ IMG = {
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+# Cover photo for each service (16:10, shown on the service cards). Files live in
+# images/services/ — swap a file there (same name) to change a cover.
+SERVICE_IMG = {k: f"images/services/{k}.jpg"
+               for k in ("interior", "exterior", "bathroom", "drywall", "flooring", "deck", "handyman")}
+
 # ----------------------------------------------------------------- data ----
 
 SERVICES = [
-    ("interior", "Interior Painting", IMG["paint"],
+    ("interior", "Interior Painting", SERVICE_IMG["interior"],
      "Walls, ceilings, trim and doors brought back to life. We move and cover furniture, mask edges, patch and sand before a single drop of paint goes on, and we clean up completely at the end of every day.",
      ["Walls, ceilings, trim, doors and closets",
       "Patching, sanding and priming included",
       "Furniture moved and floors fully protected",
       "Color and sheen guidance if you want it",
       "Occupied homes worked around your schedule"]),
-    ("exterior", "Exterior Painting", IMG["p2"],
+    ("exterior", "Exterior Painting", SERVICE_IMG["exterior"],
      "Siding, trim, porches, railings and detail work. Hudson Valley weather is hard on a house — proper washing, scraping and priming is what separates a finish that lasts from one that peels in two winters.",
      ["Washing, scraping and spot-priming before paint",
       "Siding, trim, soffits, fascia, shutters and doors",
       "Porches, columns and railings",
       "Caulking and minor surface repairs",
       "Landscaping and walkways covered and protected"]),
-    ("bathroom", "Shower &amp; Bathroom Remodeling", IMG["bath"],
+    ("bathroom", "Shower &amp; Bathroom Remodeling", SERVICE_IMG["bathroom"],
      "A full bathroom refresh handled end to end — demolition, tile, fixtures, vanities and finish work — so you deal with one contractor instead of five.",
      ["Full and partial bathroom remodels",
       "Shower and tub surrounds rebuilt",
       "Tile floors and walls",
       "Vanities, mirrors, lighting and fixtures",
       "Waterproofing and prep done properly"]),
-    ("drywall", "Drywall Installation &amp; Repair", IMG["drywall"],
+    ("drywall", "Drywall Installation &amp; Repair", SERVICE_IMG["drywall"],
      "New walls, ceiling repairs, water damage, cracks, nail pops and holes. Taped, coated and sanded smooth so the paint that follows looks like the wall was always that way.",
      ["New drywall hung and finished",
       "Water damage and ceiling repairs",
       "Crack, hole and nail-pop patching",
       "Taping, coating and skim coating",
       "Texture matching on existing walls"]),
-    ("flooring", "Laminate Floor Installation", IMG["p3"],
+    ("flooring", "Laminate Floor Installation", SERVICE_IMG["flooring"],
      "Durable, great-looking laminate flooring installed with tight seams, level subfloor prep, clean transitions and proper trim and moulding.",
      ["Subfloor checked and prepped",
       "Laminate and click-lock plank installation",
       "Transitions, thresholds and reducers",
       "Baseboard, quarter-round and shoe moulding",
       "Old flooring removed and hauled out"]),
-    ("deck", "Deck &amp; Fence Staining", IMG["p4"],
+    ("deck", "Deck &amp; Fence Staining", SERVICE_IMG["deck"],
      "Cleaning, prep and staining that protects outdoor wood from sun, rain and snow — and brings a grey, weathered deck back to something you want to sit on.",
      ["Deck, railing, fence and outdoor wood",
       "Cleaning and stripping of old finish",
       "Sanding and board repairs",
       "Semi-transparent, solid and clear finishes",
       "Sealing to resist moisture and UV"]),
-    ("handyman", "Additional Handyman Services", IMG["p5"],
+    ("handyman", "Additional Handyman Services", SERVICE_IMG["handyman"],
      "The smaller jobs that come with any project — and the ones that have been on the list for a year. If it's connected to painting or remodeling, ask us.",
      ["Trim, moulding and carpentry repairs",
       "Doors, hardware and fixture swaps",
@@ -117,7 +128,7 @@ def head(title, desc, canonical):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
 <meta name="description" content="{desc}">
-<link rel="canonical" href="https://angelosphi.com/{canonical}">
+<link rel="canonical" href="https://www.angelospropainting.com/{canonical}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
 <meta property="og:type" content="website">
@@ -264,9 +275,11 @@ HEADER = f"""<header class="site-header">
 </header>
 """
 
-def pagehero(crumb, h1, sub, bg):
+def pagehero(crumb, h1, sub, bg=None):
+    bg_html = (f'<div class="pagehero__bg"><img src="{bg}" alt="" aria-hidden="true"></div>'
+               if bg else "")
     return f"""<section class="pagehero">
-  <div class="pagehero__bg"><img src="{bg}" alt="" aria-hidden="true"></div>
+  {bg_html}
   <div class="wrap">
     <p class="crumbs"><a href="index.html">Home</a> &nbsp;/&nbsp; {crumb}</p>
     <h1>{h1}</h1>
@@ -336,7 +349,7 @@ FOOTER = f"""<footer class="site-footer">
           <li>29-A Broad Avenue<br>Ossining, NY 10562</li>
           <li><a href="tel:+19143843187">(914) 384-3187</a></li>
           <li><a href="tel:+19142369110">(914) 236-9110</a></li>
-          <li><a href="mailto:info@angelosphi.com">info@angelosphi.com</a></li>
+          <li><a href="mailto:angelosphi12@gmail.com">angelosphi12@gmail.com</a></li>
           <li>Available 24/7</li>
           <li>Payment: cash &amp; check</li>
         </ul>
@@ -478,6 +491,131 @@ page("about.html",
      about_body)
 
 
+# ------------------------------------------------------- our-work pages ----
+# One photo-gallery page per service. Photos live in images/ourwork/<folder>/
+# and each page is built by SCANNING that folder, so adding a photo is:
+#     1. drop the file into the folder   2. python3 build.py   3. commit
+# Photos appear in filename order. Name them like  interior-painting-13.jpg
+# (lowercase, hyphens, trailing number): the filename becomes the alt text.
+
+try:
+    from PIL import Image          # optional: lets us set width/height on every
+except ImportError:                # <img> so the page doesn't jump while loading
+    Image = None
+
+WORK_ROOT = "images/ourwork"
+IMG_EXT = (".jpg", ".jpeg", ".png", ".webp", ".gif")
+
+# service slug (see SERVICES) -> (image folder, gallery page filename)
+WORK = {
+    "interior": ("interior",    "our-work-interior.html"),
+    "exterior": ("exterior",    "our-work-exterior.html"),
+    "bathroom": ("shower-bath", "our-work-shower-bath.html"),
+    "drywall":  ("drywall",     "our-work-drywall.html"),
+    "flooring": ("laminate",    "our-work-laminate.html"),
+    "deck":     ("deck-fence",  "our-work-deck-fence.html"),
+    "handyman": ("handyman",    "our-work-handyman.html"),
+}
+
+
+def _natural(s):
+    """Sort key so photo-2 comes before photo-10."""
+    return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", s)]
+
+
+def _alt_from_filename(fname):
+    """power-washing-03.jpg -> 'Power washing project photo 3'."""
+    stem = os.path.splitext(fname)[0]
+    m = re.match(r"^(.*?)[-_ ]?(\d+)$", stem)
+    base, num = (m.group(1), int(m.group(2))) if m else (stem, None)
+    label = re.sub(r"[-_]+", " ", base).strip() or "Project"
+    label = label[0].upper() + label[1:]
+    return f"{label} project photo {num}" if num is not None else label
+
+
+def work_images(folder):
+    """[(src, width, height, alt)] for every image in images/ourwork/<folder>."""
+    d = os.path.join(HERE, WORK_ROOT, folder)
+    if not os.path.isdir(d):
+        return []
+    names = sorted((f for f in os.listdir(d) if f.lower().endswith(IMG_EXT)), key=_natural)
+    out = []
+    for n in names:
+        w = h = None
+        if Image is not None:
+            try:
+                with Image.open(os.path.join(d, n)) as im:
+                    w, h = im.size
+            except Exception:
+                pass
+        out.append((f"{WORK_ROOT}/{folder}/{n}", w, h, _alt_from_filename(n)))
+    return out
+
+
+def work_page(slug, name, blurb):
+    folder, filename = WORK[slug]
+    plain = name.replace("&amp;", "and")
+    imgs = work_images(folder)
+    n = len(imgs)
+
+    if imgs:
+        items = "\n      ".join(
+            f'<a class="work-item" href="{src}" data-lightbox>'
+            f'<img src="{src}" alt="{alt}"'
+            + (f' width="{w}" height="{h}"' if w and h else "")
+            + ' loading="lazy"></a>'
+            for src, w, h, alt in imgs)
+        plural = "s" if n != 1 else ""
+        grid = (f'<p class="work-count">{n} photo{plural} &middot; tap any photo to enlarge</p>\n'
+                f'    <div class="work-grid">\n      {items}\n    </div>')
+    else:
+        grid = ('<div class="tile center" style="max-width:560px;margin:0 auto">'
+                '<h3>Photos coming soon</h3>'
+                '<p>We are adding project photos for this service. In the meantime, call '
+                '<a href="tel:+19143843187">(914) 384-3187</a> and we can talk through your project.</p></div>')
+
+    others = "\n        ".join(
+        f'<a class="chip" href="{WORK[s][1]}">{nm}</a>'
+        for s, nm, _i, _b, _bl in SERVICES if s != slug)
+
+    body = f"""
+<section class="section">
+  <div class="wrap">
+    <div class="section-head center">
+      <hr class="rule">
+      <p class="eyebrow">Our work</p>
+      <h2>Project gallery</h2>
+      <p class="lede">{blurb}</p>
+    </div>
+    {grid}
+    <div class="btn-row center" style="margin-top:44px">
+      <a class="btn btn--primary" href="contact.html">Get a free estimate</a>
+      <a class="btn btn--ghost" href="services.html#{slug}">About this service</a>
+    </div>
+  </div>
+</section>
+
+<section class="section section--surface section--tight">
+  <div class="wrap center">
+    <p class="eyebrow">More of our work</p>
+    <div class="county-chips" style="justify-content:center;margin:0">
+        {others}
+    </div>
+  </div>
+</section>
+"""
+    hero = pagehero(f'<a href="gallery.html">Portfolio</a> &nbsp;/&nbsp; {name}', name,
+                    "Recent project photos from Angelos C. Painting Inc.")
+    page(filename,
+         f"{plain} Photos | Angelos C. Painting Inc.",
+         f"Project photos for {plain} by Angelos C. Painting Inc., serving Westchester, Rockland, Orange and Putnam Counties, NY.",
+         hero, body)
+
+
+for _slug, _name, _img, _blurb, _bul in SERVICES:
+    work_page(_slug, _name, _blurb)
+
+
 # ------------------------------------------------------------- services ----
 
 svc_cards = []
@@ -505,7 +643,10 @@ for i, (slug, name, img, blurb, bullets) in enumerate(SERVICES):
         <ul class="checklist">
           {lis}
         </ul>
-        <a class="btn btn--primary" href="contact.html">Get a free estimate</a>
+        <div class="btn-row">
+          <a class="btn btn--primary" href="contact.html">Get a free estimate</a>
+          <a class="btn btn--ghost" href="{WORK[slug][1]}">See our work</a>
+        </div>
       </div>
     </div>
   </div>
@@ -697,7 +838,7 @@ contact_body = f"""
           </li>
           <li>
             <span class="ci">{ICON_MAIL}</span>
-            <div><strong>Email</strong><a href="mailto:info@angelosphi.com">info@angelosphi.com</a></div>
+            <div><strong>Email</strong><a href="mailto:angelosphi12@gmail.com">angelosphi12@gmail.com</a></div>
           </li>
           <li>
             <span class="ci">{ICON_PIN}</span>
@@ -717,7 +858,7 @@ contact_body = f"""
 
       <div class="form-card">
         <h3 style="margin-bottom:1rem">Message us</h3>
-        <form data-estimate-form="info@angelosphi.com" novalidate>
+        <form data-estimate-form="angelosphi12@gmail.com" novalidate>
           <div class="field-row">
             <div class="field">
               <label for="name">Name</label>

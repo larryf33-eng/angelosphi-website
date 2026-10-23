@@ -110,9 +110,9 @@ Asset inventory (filenames are the CDN ids):
 
 ## Before this goes live — open items
 
-1. **Email address.** `info@angelosphi.com` is used throughout and is a
-   **guess** — the real address on the current site was masked and could not be
-   read. Confirm it and find/replace across all six pages.
+1. **Email address — resolved.** `angelosphi12@gmail.com` (confirmed by Larry) is
+   used everywhere; canonical URLs / JSON-LD use `https://www.angelospropainting.com/`.
+   Both live in `build.py` (and the hand-maintained `index.html`).
 2. **Contact form has no backend.** `assets/js/main.js` currently falls back to
    opening the visitor's mail client so nothing is silently lost. Point it at a
    real endpoint (the existing GoHighLevel form, Formspree, Netlify Forms, or
@@ -177,3 +177,32 @@ Pages, or an S3 bucket. Drag the folder in and it runs.
   including the dropdowns on desktop, which are pure CSS. Without JS the mobile
   drawer and the form handoff are the only things that don't work.
 - `prefers-reduced-motion` respected.
+
+## Our Work pages (photo galleries per service)
+
+Each service has a gallery page, fed by a folder of photos:
+
+| Service | Folder | Page |
+|---|---|---|
+| Interior Painting | `images/ourwork/interior/` | `our-work-interior.html` |
+| Exterior Painting | `images/ourwork/exterior/` | `our-work-exterior.html` |
+| Shower & Bathroom Remodeling | `images/ourwork/shower-bath/` | `our-work-shower-bath.html` |
+| Drywall Installation & Repair | `images/ourwork/drywall/` | `our-work-drywall.html` |
+| Laminate Floor Installation | `images/ourwork/laminate/` | `our-work-laminate.html` |
+| Deck & Fence Staining | `images/ourwork/deck-fence/` | `our-work-deck-fence.html` |
+| Additional Handyman Services | `images/ourwork/handyman/` | `our-work-handyman.html` |
+
+**To add photos:** drop `.jpg/.png/.webp` files into the right folder (name them like
+`interior-painting-13.jpg` — the name becomes the alt text), run `python3 build.py`,
+and upload the folder + regenerated page. Each service on `services.html` has a
+"See our work" button beside "Get a free estimate". Photos open in an accessible
+lightbox (arrows/Esc/swipe). `images/ourwork/_README.md` maps each file back to the
+original angelospropainting.com file.
+
+## Hosting note (GoDaddy, FTP-only access)
+
+The live domain angelospropainting.com is on GoDaddy shared hosting; we only have
+FTP to the web folder (no control panel). Upload the finished site over FTP. Because
+the control panel is not available, the contact form should use a third-party form
+endpoint (or a small PHP script if the plan supports PHP) rather than server config.
+`build.py` is run on the local machine only; GoDaddy just serves the generated files.

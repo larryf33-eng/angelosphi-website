@@ -133,6 +133,97 @@
     });
   }
 
+  /* ---- photo lightbox (our-work pages) ----
+     Every <a data-lightbox> is a real link to the full image, so the photos
+     still open with JS off; this just upgrades them to an in-page viewer. */
+  var lbLinks = [].slice.call(document.querySelectorAll("a[data-lightbox]"));
+  if (lbLinks.length) {
+    var lb, lbImg, lbCap, lbIdx = 0, lbReturn = null, lbTouchX = null;
+
+    var lbBuild = function () {
+      lb = document.createElement("div");
+      lb.className = "lb" + (lbLinks.length === 1 ? " lb--single" : "");
+      lb.hidden = true;
+      lb.setAttribute("role", "dialog");
+      lb.setAttribute("aria-modal", "true");
+      lb.setAttribute("aria-label", "Photo viewer");
+      lb.innerHTML =
+        '<button class="lb__btn lb__close" type="button" aria-label="Close photo viewer">&times;</button>' +
+        '<button class="lb__btn lb__prev" type="button" aria-label="Previous photo">&#8249;</button>' +
+        '<figure class="lb__fig"><img class="lb__img" alt=""><figcaption class="lb__cap"></figcaption></figure>' +
+        '<button class="lb__btn lb__next" type="button" aria-label="Next photo">&#8250;</button>';
+      document.body.appendChild(lb);
+      lbImg = lb.querySelector(".lb__img");
+      lbCap = lb.querySelector(".lb__cap");
+
+      lb.querySelector(".lb__close").addEventListener("click", lbClose);
+      lb.querySelector(".lb__prev").addEventListener("click", function () { lbShow(lbIdx - 1); });
+      lb.querySelector(".lb__next").addEventListener("click", function () { lbShow(lbIdx + 1); });
+      lb.addEventListener("click", function (e) {
+        if (e.target === lb || e.target.classList.contains("lb__fig")) lbClose();
+      });
+      lb.addEventListener("touchstart", function (e) { lbTouchX = e.changedTouches[0].clientX; }, { passive: true });
+      lb.addEventListener("touchend", function (e) {
+        if (lbTouchX === null) return;
+        var dx = e.changedTouches[0].clientX - lbTouchX;
+        lbTouchX = null;
+        if (Math.abs(dx) > 50) lbShow(lbIdx + (dx < 0 ? 1 : -1));
+      }, { passive: true });
+    };
+
+    var lbShow = function (i) {
+      var n = lbLinks.length;
+      lbIdx = (i + n) % n;
+      var a = lbLinks[lbIdx], thumb = a.querySelector("img");
+      lbImg.src = a.getAttribute("href");
+      lbImg.alt = thumb ? thumb.alt : "";
+      lbCap.textContent = (lbIdx + 1) + " / " + n;
+      /* warm the next photo so arrowing through feels instant */
+      var nxt = new Image();
+      nxt.src = lbLinks[(lbIdx + 1) % n].getAttribute("href");
+    };
+
+    var lbOpen = function (i) {
+      if (!lb) lbBuild();
+      lbReturn = document.activeElement;
+      lb.hidden = false;
+      document.body.classList.add("lb-open");
+      lbShow(i);
+      lb.querySelector(".lb__close").focus();
+    };
+
+    var lbClose = function () {
+      if (!lb || lb.hidden) return;
+      lb.hidden = true;
+      document.body.classList.remove("lb-open");
+      if (lbReturn && lbReturn.focus) lbReturn.focus();
+    };
+
+    lbLinks.forEach(function (a, i) {
+      a.addEventListener("click", function (e) {
+        /* let ctrl/cmd/middle-click open the file in a new tab as normal */
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
+        e.preventDefault();
+        lbOpen(i);
+      });
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (!lb || lb.hidden) return;
+      if (e.key === "Escape") lbClose();
+      else if (e.key === "ArrowLeft") lbShow(lbIdx - 1);
+      else if (e.key === "ArrowRight") lbShow(lbIdx + 1);
+      else if (e.key === "Tab") {
+        /* keep keyboard focus inside the viewer while it is open */
+        var f = [].slice.call(lb.querySelectorAll(".lb__btn")).filter(function (b) { return b.offsetParent !== null; });
+        if (!f.length) return;
+        var first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+  }
+
   /* ---- year in footer ---- */
   document.querySelectorAll("[data-year]").forEach(function (el) {
     el.textContent = new Date().getFullYear();

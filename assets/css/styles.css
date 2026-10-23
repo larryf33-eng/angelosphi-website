@@ -569,6 +569,64 @@ section[id], .area-cols li[id], #counties { scroll-margin-top: 108px; }
 .area-cols li[id]:target { background: #fff4d6; border-radius: 6px; }
 .area-cols li[id]:target::before { background: var(--navy); }
 
+/* ---------------------------------------------------------- our-work -- */
+/* icons inside buttons need an explicit size or they render huge */
+.btn svg { width: 16px; height: 16px; flex: none; }
+
+.work-count { text-align: center; color: var(--muted); font-size: .9rem; font-weight: 600; letter-spacing: .04em; margin: 0 0 26px; }
+
+/* masonry via CSS columns: the photos mix portrait and landscape, so a fixed
+   aspect ratio would crop them badly */
+.work-grid { columns: 3 260px; column-gap: 16px; }
+.work-item {
+  display: block; position: relative; overflow: hidden;
+  margin: 0 0 16px; break-inside: avoid;
+  border-radius: var(--radius); background: #e6eaf0; box-shadow: var(--shadow-sm);
+  cursor: zoom-in;
+}
+.work-item img { width: 100%; height: auto; transition: transform .4s ease; }
+.work-item::after { content: ""; position: absolute; inset: 0; background: rgba(18,41,74,0); transition: background .2s ease; }
+.work-item:hover img { transform: scale(1.04); }
+.work-item:hover::after { background: rgba(18,41,74,.14); }
+.work-item:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+a.chip { transition: background .18s ease; }
+a.chip:hover { background: var(--red); color: #fff; }
+
+/* lightbox */
+body.lb-open { overflow: hidden; }
+.lb {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(8,16,30,.94);
+  padding: 64px 72px;
+}
+.lb[hidden] { display: none; }
+.lb__fig { margin: 0; max-width: 100%; max-height: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+/* shown at natural size on purpose: these are 510px-wide web copies and
+   stretching them to fill a big screen would just make them blurry */
+.lb__img { max-width: 100%; max-height: calc(100vh - 160px); width: auto; height: auto; border-radius: 6px; background: #e6eaf0; }
+.lb__cap { color: rgba(255,255,255,.72); font-size: .88rem; font-weight: 600; letter-spacing: .06em; }
+.lb__btn {
+  position: absolute; border: 0; cursor: pointer; color: #fff;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(255,255,255,.14);
+  display: grid; place-items: center; font-size: 30px; line-height: 1;
+  transition: background .18s ease;
+}
+.lb__btn:hover, .lb__btn:focus-visible { background: var(--red); outline: none; }
+.lb__close { top: 16px; right: 16px; }
+.lb__prev { left: 14px; top: 50%; transform: translateY(-50%); }
+.lb__next { right: 14px; top: 50%; transform: translateY(-50%); }
+.lb--single .lb__prev, .lb--single .lb__next { display: none; }
+
+@media (max-width: 720px) {
+  .work-grid { columns: 2; column-gap: 10px; }
+  .work-item { margin-bottom: 10px; }
+  .lb { padding: 64px 8px 28px; }
+  .lb__prev { left: 6px; } .lb__next { right: 6px; }
+  .lb__btn { width: 42px; height: 42px; }
+}
+
 /* ---------------------------------------------------------- responsive -- */
 @media (max-width: 1024px) {
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
