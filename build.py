@@ -51,7 +51,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 # Cover photo for each service (16:10, shown on the service cards). Files live in
 # images/services/ — swap a file there (same name) to change a cover.
 SERVICE_IMG = {k: f"images/services/{k}.jpg"
-               for k in ("interior", "exterior", "bathroom", "drywall", "flooring", "deck", "handyman")}
+               for k in ("interior", "exterior", "bathroom", "drywall", "flooring", "deck", "pressure", "handyman")}
 
 # ----------------------------------------------------------------- data ----
 
@@ -98,11 +98,17 @@ SERVICES = [
       "Sanding and board repairs",
       "Semi-transparent, solid and clear finishes",
       "Sealing to resist moisture and UV"]),
+    ("pressure", "Pressure Washing", SERVICE_IMG["pressure"],
+     "Clean almost any surface with pressure washing: decks, fences, driveways, exterior walls and even roofs. Dirt, grime, mildew and algae come off for a spotless finish, and it is the right first step before painting or staining.",
+     ["Decks, fences and outdoor wood",
+      "Driveways and walkways",
+      "Siding, exterior walls and roofs",
+      "Dirt, grime, mildew and algae removed",
+      "Ideal prep before painting or staining"]),
     ("handyman", "Additional Handyman Services", SERVICE_IMG["handyman"],
      "The smaller jobs that come with any project — and the ones that have been on the list for a year. If it's connected to painting or remodeling, ask us.",
      ["Trim, moulding and carpentry repairs",
       "Doors, hardware and fixture swaps",
-      "Power washing and surface prep",
       "Punch-list and touch-up work",
       "Commercial property maintenance"]),
 ]
@@ -330,6 +336,7 @@ FOOTER = f"""<footer class="site-footer">
           <li><a href="services.html#drywall">Drywall &amp; Repair</a></li>
           <li><a href="services.html#flooring">Laminate Flooring</a></li>
           <li><a href="services.html#deck">Deck &amp; Fence Staining</a></li>
+          <li><a href="services.html#pressure">Pressure Washing</a></li>
           <li><a href="services.html#handyman">Handyman Services</a></li>
         </ul>
       </div>
@@ -514,6 +521,7 @@ WORK = {
     "drywall":  ("drywall",     "our-work-drywall.html"),
     "flooring": ("laminate",    "our-work-laminate.html"),
     "deck":     ("deck-fence",  "our-work-deck-fence.html"),
+    "pressure": (None,          "pressure-washing.html"),   # custom before/after page, see below
     "handyman": ("handyman",    "our-work-handyman.html"),
 }
 
@@ -613,7 +621,111 @@ def work_page(slug, name, blurb):
 
 
 for _slug, _name, _img, _blurb, _bul in SERVICES:
-    work_page(_slug, _name, _blurb)
+    if _slug != "pressure":          # pressure washing has its own before/after page
+        work_page(_slug, _name, _blurb)
+
+
+# ----------------------------------------------- pressure washing page ----
+# Pairs are found by filename in images/ourwork/pressure-washing/:
+#   fence-before.jpg + fence-after.jpg        -> a "Fence" before/after pair
+#   house-siding-before.jpg + ...-after.jpg   -> "House siding"
+# To add a pair, drop in <name>-before.jpg and <name>-after.jpg and re-run this script.
+
+PRESSURE_FOLDER = "pressure-washing"
+
+
+def pressure_pairs():
+    d = os.path.join(HERE, WORK_ROOT, PRESSURE_FOLDER)
+    names = sorted(os.listdir(d), key=_natural) if os.path.isdir(d) else []
+    found = {}
+    for n in names:
+        stem, ext = os.path.splitext(n)
+        m = re.match(r"^(.+)-(before|after)$", stem, re.I)
+        if m and ext.lower() in IMG_EXT:
+            found.setdefault(m.group(1).lower(), {})[m.group(2).lower()] = n
+    pairs = []
+    for label in sorted(found, key=_natural):
+        both = found[label]
+        if "before" in both and "after" in both:
+            pairs.append((label, both["before"], both["after"]))
+        else:
+            print(f"  note: pressure-washing/{label} needs both a -before and an -after file; skipped")
+    return pairs
+
+
+def _img_tag(rel, alt):
+    w = h = None
+    if Image is not None:
+        try:
+            with Image.open(os.path.join(HERE, rel)) as im:
+                w, h = im.size
+        except Exception:
+            pass
+    size = f' width="{w}" height="{h}"' if w and h else ""
+    return f'<a href="{rel}" data-lightbox><img src="{rel}" alt="{alt}"{size} loading="lazy"></a>'
+
+
+def pressure_page():
+    slug, name = "pressure", "Pressure Washing"
+    blurb = next(b for s, _n, _i, b, _bl in SERVICES if s == slug)
+    blocks = []
+    for label, before, after in pressure_pairs():
+        title = re.sub(r"[-_]+", " ", label).strip().capitalize()
+        pb = f"{WORK_ROOT}/{PRESSURE_FOLDER}/{before}"
+        pa = f"{WORK_ROOT}/{PRESSURE_FOLDER}/{after}"
+        blocks.append(f"""    <article class="pw">
+      <h3 class="pw__title">{title}</h3>
+      <div class="pw__pair">
+        <figure class="pw__item">{_img_tag(pb, f"{title} before pressure washing")}<span class="pw__tag">Before</span></figure>
+        <figure class="pw__item pw__item--after">{_img_tag(pa, f"{title} after pressure washing")}<span class="pw__tag">After</span></figure>
+      </div>
+    </article>""")
+    if blocks:
+        grid = '<div class="pw-list">\n' + "\n".join(blocks) + "\n    </div>"
+    else:
+        grid = ('<div class="tile center" style="max-width:560px;margin:0 auto"><h3>Photos coming soon</h3>'
+                '<p>Call <a href="tel:+19143843187">(914) 384-3187</a> to talk through your project.</p></div>')
+
+    others = "\n        ".join(
+        f'<a class="chip" href="{WORK[s][1]}">{nm}</a>'
+        for s, nm, _i, _b, _bl in SERVICES if s != slug)
+
+    body = f"""
+<section class="section">
+  <div class="wrap">
+    <div class="section-head center">
+      <hr class="rule">
+      <p class="eyebrow">See the difference</p>
+      <h2>Before &amp; after</h2>
+      <p class="lede">{blurb}</p>
+    </div>
+    {grid}
+    <p class="work-count" style="margin-top:28px">Tap any photo to enlarge.</p>
+    <div class="btn-row center" style="margin-top:20px">
+      <a class="btn btn--primary" href="contact.html">Get a free estimate</a>
+      <a class="btn btn--ghost" href="services.html#{slug}">About this service</a>
+    </div>
+  </div>
+</section>
+
+<section class="section section--surface section--tight">
+  <div class="wrap center">
+    <p class="eyebrow">More of our work</p>
+    <div class="county-chips" style="justify-content:center;margin:0">
+        {others}
+    </div>
+  </div>
+</section>
+"""
+    hero = pagehero('<a href="services.html">Services</a> &nbsp;/&nbsp; ' + name, name,
+                    "Real before-and-after results from Angelos C. Painting Inc.")
+    page(WORK[slug][1],
+         "Pressure Washing Before &amp; After | Angelos C. Painting Inc.",
+         "Pressure washing by Angelos C. Painting Inc. for decks, fences, siding, driveways and more, with before and after photos. Serving Westchester, Rockland, Orange and Putnam Counties, NY.",
+         hero, body)
+
+
+pressure_page()
 
 
 # ------------------------------------------------------------- services ----
@@ -689,9 +801,9 @@ services_body = f"""
 
 page("services.html",
      "Painting &amp; Remodeling Services | Angelos C. Painting Inc.",
-     "Interior and exterior painting, shower and bathroom remodeling, drywall installation and repair, laminate flooring, deck and fence staining, and handyman services across Westchester County, NY.",
+     "Interior and exterior painting, shower and bathroom remodeling, drywall installation and repair, laminate flooring, deck and fence staining, pressure washing, and handyman services across Westchester County, NY.",
      pagehero("Services", "Our Services",
-              "Interior and exterior painting, bathroom remodeling, drywall, flooring, deck staining and handyman work &mdash; all handled by our own crew.",
+              "Interior and exterior painting, bathroom remodeling, drywall, flooring, deck staining, pressure washing and handyman work &mdash; all handled by our own crew.",
               IMG["paint"]),
      services_body)
 
@@ -856,9 +968,11 @@ contact_body = f"""
         </div>
       </div>
 
-      <div class="form-card">
+      <div class="form-card" id="estimate">
         <h3 style="margin-bottom:1rem">Message us</h3>
-        <form data-estimate-form="angelosphi12@gmail.com" novalidate>
+        <form data-estimate-form="angelosphi12@gmail.com" action="submit.php" method="post" novalidate>
+          <div class="hp" aria-hidden="true"><label for="website">Leave this field empty</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+          <input type="hidden" name="t" value="">
           <div class="field-row">
             <div class="field">
               <label for="name">Name</label>
@@ -896,7 +1010,7 @@ contact_body = f"""
             <span>I confirm that I want to receive content from this company using any contact information I provide.</span>
           </label>
           <button class="btn btn--primary" type="submit" style="width:100%;justify-content:center">Send Your Message</button>
-          <p class="form-note">This form is not connected to a mail server yet &mdash; submitting it opens your email app with the details filled in. Wire it to your CRM or form endpoint before launch.</p>
+          <p class="form-note" role="status" aria-live="polite" data-form-status>We reply within one business day, usually much sooner. In a hurry? Call <a href="tel:+19143843187">(914) 384-3187</a>.</p>
         </form>
       </div>
     </div>
