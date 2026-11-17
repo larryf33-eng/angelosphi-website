@@ -510,6 +510,12 @@ li { margin-bottom: .4em; }
 .consent { display: flex; gap: 11px; align-items: flex-start; font-size: .87rem; color: var(--muted); margin-bottom: 22px; }
 .consent input { margin-top: 4px; flex: none; width: 17px; height: 17px; accent-color: var(--red); }
 .form-note { font-size: .82rem; color: var(--muted); margin: 16px 0 0; }
+.form-note.is-ok  { color: #1e6b3a; font-weight: 600; font-size: .95rem; }
+.form-note.is-err { color: var(--red); font-weight: 600; font-size: .95rem; }
+.hp { position: absolute !important; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.field input[aria-invalid="true"], .field select[aria-invalid="true"] { border-color: var(--red); }
+.consent.is-invalid span { color: var(--red); }
+button[disabled] { opacity: .65; cursor: progress; }
 
 .contact-list { list-style: none; padding: 0; margin: 0; }
 .contact-list li { display: flex; gap: 15px; align-items: flex-start; padding: 18px 0; border-bottom: 1px solid var(--line); }
@@ -757,4 +763,24 @@ body.lb-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { transition: none !important; animation: none !important; }
+}
+
+
+/* ---- pressure-washing before / after ---- */
+.pw-list { display: grid; gap: 56px; max-width: 1040px; margin: 0 auto; }
+.pw__title { text-align: center; margin: 0 0 18px; }
+.pw__pair { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.pw__item { position: relative; margin: 0; }
+.pw__item a { display: block; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-md); }
+.pw__item img { display: block; width: 100%; height: auto; transition: transform .35s ease; }
+.pw__item a:hover img, .pw__item a:focus-visible img { transform: scale(1.03); }
+.pw__tag {
+  position: absolute; top: 14px; left: 14px; padding: 6px 14px; border-radius: 999px;
+  background: var(--navy); color: #fff; font: 700 .78rem/1 "Barlow Condensed", "Inter", sans-serif;
+  letter-spacing: .14em; text-transform: uppercase; pointer-events: none;
+}
+.pw__item--after .pw__tag { background: var(--red); }
+@media (max-width: 600px) {
+  .pw__pair { grid-template-columns: 1fr; gap: 14px; }
+  .pw-list { gap: 44px; }
 }
