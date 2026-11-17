@@ -52,6 +52,7 @@
             <li><a href="services.html#drywall">Drywall Installation &amp; Repair</a></li>
             <li><a href="services.html#flooring">Laminate Floor Installation</a></li>
             <li><a href="services.html#deck">Deck &amp; Fence Staining</a></li>
+            <li><a href="services.html#pressure">Pressure Washing</a></li>
             <li><a href="services.html#handyman">Additional Handyman Services</a></li>
               </ul>
             </div>
@@ -166,9 +167,11 @@
         </div>
       </div>
 
-      <div class="form-card">
+      <div class="form-card" id="estimate">
         <h3 style="margin-bottom:1rem">Message us</h3>
-        <form data-estimate-form="angelosphi12@gmail.com" novalidate>
+        <form data-estimate-form="angelosphi12@gmail.com" action="submit.php" method="post" novalidate>
+          <div class="hp" aria-hidden="true"><label for="website">Leave this field empty</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+          <input type="hidden" name="t" value="">
           <div class="field-row">
             <div class="field">
               <label for="name">Name</label>
@@ -199,6 +202,7 @@
             <option>Drywall Installation & Repair</option>
             <option>Laminate Floor Installation</option>
             <option>Deck & Fence Staining</option>
+            <option>Pressure Washing</option>
             <option>Additional Handyman Services</option>
             <option>Something else</option>
             </select>
@@ -212,7 +216,7 @@
             <span>I confirm that I want to receive content from this company using any contact information I provide.</span>
           </label>
           <button class="btn btn--primary" type="submit" style="width:100%;justify-content:center">Send Your Message</button>
-          <p class="form-note">This form is not connected to a mail server yet &mdash; submitting it opens your email app with the details filled in. Wire it to your CRM or form endpoint before launch.</p>
+          <p class="form-note" role="status" aria-live="polite" data-form-status>We reply within one business day, usually much sooner. In a hurry? Call <a href="tel:+19143843187">(914) 384-3187</a>.</p>
         </form>
       </div>
     </div>
@@ -268,6 +272,7 @@
           <li><a href="services.html#drywall">Drywall &amp; Repair</a></li>
           <li><a href="services.html#flooring">Laminate Flooring</a></li>
           <li><a href="services.html#deck">Deck &amp; Fence Staining</a></li>
+          <li><a href="services.html#pressure">Pressure Washing</a></li>
           <li><a href="services.html#handyman">Handyman Services</a></li>
         </ul>
       </div>
